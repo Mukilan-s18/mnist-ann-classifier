@@ -47,7 +47,8 @@ def preprocess_data(x_train, x_test, y_train, y_test, num_classes=10):
 def build_model(input_shape=(784,), num_classes=10):
     """Builds a Sequential neural network model with three Dense layers."""
     model = keras.Sequential([
-        layers.Dense(128, activation="relu", input_shape=input_shape, name="hidden_1"),
+        keras.Input(shape=input_shape),
+        layers.Dense(128, activation="relu", name="hidden_1"),
         layers.Dense(64,  activation="relu",                     name="hidden_2"),
         layers.Dense(num_classes, activation="softmax",          name="output"),
     ])
