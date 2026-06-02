@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![TensorFlow 2.15+](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://tensorflow.org)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://mukilan.github.io/mnist-ann-classifier/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://mukilan-s18.github.io/mnist-ann-classifier/)
 
 An end-to-end, highly visual project implementing a fully-connected Artificial Neural Network (ANN) to classify handwritten digits (0-9) from the classic MNIST dataset. It features a Python training pipeline built with TensorFlow/Keras and an **interactive, client-side web application** that runs the trained neural network model in real-time inside your browser using pure, vanilla JavaScript.
 
