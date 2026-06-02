@@ -45,12 +45,12 @@ To load the interactive drawing interface on your local machine:
    ```bash
    python mnist_ann_classifier.py
    ```
-   This will export `web/model_weights.json`.
+   This will export `docs/model_weights.json`.
 
-2. **Serve the `web` folder:**
+2. **Serve the `docs` folder:**
    Since the web app uses `fetch` to read the weights database, modern browsers restrict loading JSON directly from the local file system (`file://` protocol) due to CORS security rules. You must run a local server:
    ```bash
-   python -m http.server 8000 --directory web
+   python -m http.server 8000 --directory docs
    ```
    Now navigate to `http://localhost:8000` in your web browser.
 

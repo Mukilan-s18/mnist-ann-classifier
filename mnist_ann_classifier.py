@@ -74,7 +74,7 @@ def train_model(model, x_train, y_train, epochs=10, batch_size=32, validation_sp
     )
     return history
 
-def export_weights_to_json(model, output_path="web/model_weights.json"):
+def export_weights_to_json(model, output_path="docs/model_weights.json"):
     """Extracts weights and biases from the trained model and exports them to JSON.
     
     This matches the shapes of the Dense layers:
@@ -191,7 +191,7 @@ def main():
     save_plots(history, model, x_test_flat, x_test, y_test_ohe, y_test)
 
     # 7. Export weights for web app
-    export_weights_to_json(model, "web/model_weights.json")
+    export_weights_to_json(model, "docs/model_weights.json")
 
     print("\n✅ Done! All steps completed successfully.\n")
 

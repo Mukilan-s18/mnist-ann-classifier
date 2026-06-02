@@ -13,7 +13,7 @@ An end-to-end, highly visual project implementing a fully-connected Artificial N
 ## 🚀 Key Features
 
 * **Interactive Web Canvas**: Draw any digit (0-9) on the HTML5 canvas and see predictions update instantly.
-* **Zero-Dependency JS Inference**: Trained weights are exported to JSON (`web/model_weights.json`) and computed on the fly in the browser using custom matrix algebra—no heavy libraries (like TensorFlow.js or ONNX) required!
+* **Zero-Dependency JS Inference**: Trained weights are exported to JSON (`docs/model_weights.json`) and computed on the fly in the browser using custom matrix algebra—no heavy libraries (like TensorFlow.js or ONNX) required!
 * **Mobile Friendly**: Canvas drawing supports both mouse drag and touch events for phones and tablets.
 * **Modular Pipeline**: Clean, structured Python code (`mnist_ann_classifier.py`) divided into testable preprocessing, compilation, training, and export functions.
 * **Robust Verification**: Unit tests (`pytest`) verify data pipelines and model constraints; linting (`ruff`) enforces clean code styles.
@@ -23,7 +23,7 @@ An end-to-end, highly visual project implementing a fully-connected Artificial N
 
 ## 🎨 Interactive Web Demo
 
-The `web/` folder is designed for quick deployment via **GitHub Pages**. Once pushed, the live demo is accessible at:
+The `docs/` folder is designed for quick deployment via **GitHub Pages**. Once pushed, the live demo is accessible at:
 👉 **`https://<your-username>.github.io/mnist-ann-classifier/`**
 
 ### Preview
@@ -108,12 +108,12 @@ To run the training pipeline, evaluate the model on the test set, save training 
 ```bash
 python mnist_ann_classifier.py
 ```
-This writes the neural network weights to `web/model_weights.json`.
+This writes the neural network weights to `docs/model_weights.json`.
 
 ### 2. Launch the Web Interface Locally
 Since the browser fetches `model_weights.json` asynchronously, loading the HTML directly via `file://` is blocked by browser CORS security policies. Run a local web server to play with the demo:
 ```bash
-python -m http.server 8000 --directory web
+python -m http.server 8000 --directory docs
 ```
 Open **`http://localhost:8000`** in your browser.
 
