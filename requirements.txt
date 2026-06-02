@@ -1,3 +1,7 @@
 tensorflow
 numpy
 matplotlib
+
+# Development & Testing
+pytest
+ruff
