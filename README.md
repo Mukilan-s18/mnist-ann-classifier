@@ -84,77 +84,84 @@ $$\hat{y} = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.11+ (Recommended)
 - `pip`
 
-### 1. Clone & Install
+### 1. Clone & Install via Makefile (Recommended)
 
 ```bash
 git clone https://github.com/Mukilan-s18/mnist-ann-classifier.git
 cd mnist-ann-classifier
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+make install
 ```
+
+Alternatively, using standard pip:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install gradio
+```
+
 
 ---
 
 ## 💻 Usage
 
+We provide a `Makefile` to simplify all common commands.
+
+### Launch the Live Browser Demo (Gradio)
+```bash
+make demo
+```
+This launches a **Gradio web app** (`app.py`) on `http://localhost:7860`. You can draw digits on the canvas and view real-time confidence scores along with **Saliency Maps** (explainability).
+
 ### Train the Full Pipeline
 ```bash
-python mnist_ann_classifier.py
+make train
 ```
 
 This will:
 1. Train the ANN (or load saved model if it exists)
-2. Print test accuracy, loss
-3. Generate `confusion_matrix.png`
-4. Print per-class classification report
-5. Generate `sample_predictions.png`, `training_history.png`
-6. Run architecture comparison → `architecture_comparison.png`
-7. Run CNN benchmark → `benchmark_comparison.png`
-8. Run hyperparameter analysis → `hyperparameter_analysis.png`
-9. Export weights → `docs/model_weights.json`
+2. Generate all plots (`confusion_matrix.png`, `training_history.png`, etc.)
+3. Run architecture comparison & CNN benchmark
+4. Export weights & save model
 
 ### Run the Interactive Notebook
 ```bash
-jupyter notebook notebook.ipynb
+make notebook
 ```
 
-### Launch the Browser Demo Locally
+### Run Tests and Code Quality
 ```bash
-python -m http.server 8000 --directory docs
-```
-Open **`http://localhost:8000`** — draw any digit and watch the model predict in real-time.
-
-### Run Tests
-```bash
-pytest tests/ -v
+make test
+make lint
 ```
 
-### Code Quality Check
+### Clean generated files
 ```bash
-ruff check .
+make clean
 ```
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 mnist-ann-classifier/
+├── app.py                     # Gradio web app with live drawing and Saliency maps
+├── MODEL_CARD.md              # Professional model card detailing biases, limitations
+├── Makefile                   # Quick commands for train, demo, test, clean
+├── Dockerfile                 # Multi-stage build for easy Gradio deployment
+├── pyproject.toml             # Standard Python packaging configuration
 ├── mnist_ann_classifier.py    # Full ML pipeline (train, eval, compare, benchmark)
 ├── notebook.ipynb             # Step-by-step Jupyter walkthrough
 ├── requirements.txt           # Pinned dependencies
 ├── training_history.png       # Training/validation accuracy & loss curves
 ├── confusion_matrix.png       # 10x10 confusion matrix heatmap
 ├── sample_predictions.png     # Grid of test predictions with labels
-├── docs/                      # GitHub Pages web demo
-│   ├── index.html             # Interactive canvas UI
-│   ├── style.css              # Dark glassmorphism theme
-│   ├── script.js              # Client-side neural network inference
-│   └── model_weights.json     # Exported weights for browser inference
+├── saved_model/               # Saved keras model directory
+├── docs/                      # Original GitHub Pages web demo (JS Inference)
 ├── tests/
 │   └── test_classifier.py     # pytest suite (data, model, save/load)
 └── .github/
