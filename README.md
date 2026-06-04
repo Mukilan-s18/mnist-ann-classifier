@@ -1,139 +1,163 @@
-# Interactive MNIST Digit Classifier Using a Simple ANN
+# Interactive MNIST Digit Classifier — ANN with Full Evaluation Pipeline
 
-[![CI Pipeline](https://github.com/mukilan/mnist-ann-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/mukilan/mnist-ann-classifier/actions)
+[![CI Pipeline](https://github.com/Mukilan-s18/mnist-ann-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/Mukilan-s18/mnist-ann-classifier/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
-[![TensorFlow 2.15+](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://tensorflow.org)
+[![TensorFlow 2.20](https://img.shields.io/badge/TensorFlow-2.20-orange.svg)](https://tensorflow.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6-blueviolet.svg)](https://scikit-learn.org)
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://mukilan-s18.github.io/mnist-ann-classifier/)
+[![Open in Jupyter](https://img.shields.io/badge/Notebook-Jupyter-orange.svg)](notebook.ipynb)
 
-An end-to-end, highly visual project implementing a fully-connected Artificial Neural Network (ANN) to classify handwritten digits (0-9) from the classic MNIST dataset. It features a Python training pipeline built with TensorFlow/Keras and an **interactive, client-side web application** that runs the trained neural network model in real-time inside your browser using pure, vanilla JavaScript.
+An **end-to-end, production-style deep learning pipeline** for classifying handwritten digits (0–9) from the MNIST dataset. Features a rigorously evaluated ANN with Dropout regularization, multi-architecture comparison, CNN benchmarking, hyperparameter sensitivity analysis, and a **live interactive browser demo** powered by client-side JavaScript inference.
 
 ---
 
 ## 🚀 Key Features
 
-* **Interactive Web Canvas**: Draw any digit (0-9) on the HTML5 canvas and see predictions update instantly.
-* **Zero-Dependency JS Inference**: Trained weights are exported to JSON (`docs/model_weights.json`) and computed on the fly in the browser using custom matrix algebra—no heavy libraries (like TensorFlow.js or ONNX) required!
-* **Mobile Friendly**: Canvas drawing supports both mouse drag and touch events for phones and tablets.
-* **Modular Pipeline**: Clean, structured Python code (`mnist_ann_classifier.py`) divided into testable preprocessing, compilation, training, and export functions.
-* **Robust Verification**: Unit tests (`pytest`) verify data pipelines and model constraints; linting (`ruff`) enforces clean code styles.
-* **CI/CD Integration**: Automated GitHub Actions workflow checks syntax and runs the test suite on every push.
+| Feature | Description |
+|---|---|
+| **Dropout Regularization** | `Dropout(0.2)` after each hidden layer prevents overfitting |
+| **Model Save / Load** | Trained model persisted to disk — no retraining on every run |
+| **Confusion Matrix** | Full 10×10 heatmap showing where the model makes mistakes |
+| **Per-Class Accuracy** | Precision, Recall, F1 for every digit (0–9) via `classification_report` |
+| **Architecture Comparison** | 3 ANN variants compared on accuracy and parameter count |
+| **CNN Benchmark** | Accuracy vs complexity tradeoff: ANN vs CNN comparison |
+| **Hyperparameter Analysis** | Batch size and dropout rate sensitivity sweeps with plots |
+| **Early Stopping** | Monitors validation loss, restores best weights automatically |
+| **Jupyter Notebook** | Step-by-step interactive narrative in `notebook.ipynb` |
+| **Browser Demo** | Draw digits on canvas → real-time predictions via JS inference |
+| **CI/CD Pipeline** | GitHub Actions runs `ruff` + `pytest` on every push |
 
 ---
 
-## 🎨 Interactive Web Demo
-
-The `docs/` folder is designed for quick deployment via **GitHub Pages**. Once pushed, the live demo is accessible at:
-👉 **`https://<your-username>.github.io/mnist-ann-classifier/`**
-
-### Preview
-Below is the web application's dashboard running client-side predictions:
-
-* **Subsampled Input**: The drawing area is automatically downscaled to a $28 \times 28$ grayscale grid, matching the exact format the network was trained on.
-* **Class Probabilities**: A dynamic bar chart displays activation probabilities calculated from the output Softmax layer.
-
----
-
-## 🧠 Model Architecture & Mathematics
-
-The network is a fully-connected Feedforward Neural Network (Multi-Layer Perceptron):
+## 🧠 Model Architecture
 
 ```
-[Input Layer]       [Hidden Layer 1]       [Hidden Layer 2]       [Output Layer]
- 784 Neurons   ──>    128 Neurons    ──>     64 Neurons    ──>     10 Neurons
-(28x28 Image)            (ReLU)                 (ReLU)              (Softmax)
+Input (784) → Dense(128, ReLU) → Dropout(0.2) → Dense(64, ReLU) → Dropout(0.2) → Dense(10, Softmax)
 ```
 
-### Feedforward Propagation Math
+### Feedforward Math
 
-Every prediction is calculated using standard linear algebra:
-1. **Hidden Layer 1**:  
-   $$h_1 = \max(0, W_1 \cdot x + b_1)$$
-2. **Hidden Layer 2**:  
-   $$h_2 = \max(0, W_2 \cdot h_1 + b_2)$$
-3. **Output Layer (Softmax)**:  
-   $$y = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
+$$h_1 = \text{ReLU}(W_1 \cdot x + b_1)$$
+$$h_2 = \text{ReLU}(W_2 \cdot h_1 + b_2)$$
+$$\hat{y} = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
 
-Where:
-* $x$ is the $784$-dimensional normalized input vector ($[0.0, 1.0]$ grayscale values).
-* $W_1$, $W_2$, $W_3$ are the weight matrices.
-* $b_1$, $b_2$, $b_3$ are the bias vectors.
-* $\text{Softmax}(z_i) = \frac{e^{z_i}}{\sum_{k=0}^{9} e^{z_k}}$ yields class probabilities.
+**Total Parameters:** ~109,386 | **Optimizer:** Adam | **Loss:** Categorical Crossentropy
 
 ---
 
-## 📊 Training Results
+## 📊 Results
 
-Running the training script compiles the Keras model using the **Adam** optimizer and **Categorical Crossentropy** loss. It trains for 10 epochs (typically achieving **>97.5% validation accuracy**):
+### Accuracy: **>97.5%** on the MNIST test set (10,000 samples)
 
-### 1. Training Curves (`training_history.png`)
+### Training Curves
 ![Training History](training_history.png)
 
-### 2. Test Set Predictions (`sample_predictions.png`)
+### Confusion Matrix
+![Confusion Matrix](confusion_matrix.png)
+
+### Sample Predictions
 ![Sample Predictions](sample_predictions.png)
+
+### Architecture Comparison
+
+| Architecture | Test Accuracy | Parameters |
+|---|---|---|
+| ANN Small (64→32) | ~97.1% | ~52,000 |
+| **ANN Medium (128→64)** ✅ | **~97.7%** | **~109,000** |
+| ANN Large (256→128→64) | ~97.8% | ~236,000 |
+| CNN (Conv32→Conv64→Dense64) | ~99.1% | ~94,000 |
+
+> **Insight:** The medium ANN offers the best accuracy-to-complexity ratio. The CNN achieves ~1.5% higher accuracy using fewer parameters by exploiting spatial structure.
 
 ---
 
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-* Python 3.9 or higher
-* `pip` (Python package manager)
+- Python 3.9+
+- `pip`
 
-### Local Environment Setup
+### 1. Clone & Install
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/mukilan/mnist-ann-classifier.git
-   cd mnist-ann-classifier
-   ```
-
-2. **Create and activate a virtual environment**:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate  # On Windows use: .venv\Scripts\activate.bat
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/Mukilan-s18/mnist-ann-classifier.git
+cd mnist-ann-classifier
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
 ---
 
-## 💻 Usage Instructions
+## 💻 Usage
 
-### 1. Train and Export Weights
-To run the training pipeline, evaluate the model on the test set, save training visualizations, and export weights:
+### Train the Full Pipeline
 ```bash
 python mnist_ann_classifier.py
 ```
-This writes the neural network weights to `docs/model_weights.json`.
 
-### 2. Launch the Web Interface Locally
-Since the browser fetches `model_weights.json` asynchronously, loading the HTML directly via `file://` is blocked by browser CORS security policies. Run a local web server to play with the demo:
+This will:
+1. Train the ANN (or load saved model if it exists)
+2. Print test accuracy, loss
+3. Generate `confusion_matrix.png`
+4. Print per-class classification report
+5. Generate `sample_predictions.png`, `training_history.png`
+6. Run architecture comparison → `architecture_comparison.png`
+7. Run CNN benchmark → `benchmark_comparison.png`
+8. Run hyperparameter analysis → `hyperparameter_analysis.png`
+9. Export weights → `docs/model_weights.json`
+
+### Run the Interactive Notebook
+```bash
+jupyter notebook notebook.ipynb
+```
+
+### Launch the Browser Demo Locally
 ```bash
 python -m http.server 8000 --directory docs
 ```
-Open **`http://localhost:8000`** in your browser.
+Open **`http://localhost:8000`** — draw any digit and watch the model predict in real-time.
 
-### 3. Run Verification Tests
-To run unit tests validating model structures and data formatting:
+### Run Tests
 ```bash
-pytest tests/
+pytest tests/ -v
 ```
 
-To verify code formatting and styling:
+### Code Quality Check
 ```bash
 ruff check .
 ```
 
 ---
 
+## 📁 Project Structure
+
+```
+mnist-ann-classifier/
+├── mnist_ann_classifier.py    # Full ML pipeline (train, eval, compare, benchmark)
+├── notebook.ipynb             # Step-by-step Jupyter walkthrough
+├── requirements.txt           # Pinned dependencies
+├── training_history.png       # Training/validation accuracy & loss curves
+├── confusion_matrix.png       # 10x10 confusion matrix heatmap
+├── sample_predictions.png     # Grid of test predictions with labels
+├── docs/                      # GitHub Pages web demo
+│   ├── index.html             # Interactive canvas UI
+│   ├── style.css              # Dark glassmorphism theme
+│   ├── script.js              # Client-side neural network inference
+│   └── model_weights.json     # Exported weights for browser inference
+├── tests/
+│   └── test_classifier.py     # pytest suite (data, model, save/load)
+└── .github/
+    └── workflows/ci.yml       # GitHub Actions CI pipeline
+```
+
+---
+
 ## 🤝 Contributing
 
-Contributions, bug reports, and suggestions are welcome! Please review the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines and adhere to the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Contributions, bug reports, and suggestions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.

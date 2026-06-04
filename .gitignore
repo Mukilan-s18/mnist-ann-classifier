@@ -23,3 +23,11 @@ venv.bak/
 # IDEs
 .vscode/
 .idea/
+
+# Trained model files (large — regenerate with: python mnist_ann_classifier.py)
+saved_model/
+
+# Generated output plots
+architecture_comparison.png
+benchmark_comparison.png
+hyperparameter_analysis.png

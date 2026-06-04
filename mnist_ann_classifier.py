@@ -1,61 +1,113 @@
 """
 MNIST Image Classification Using a Simple Artificial Neural Network
 ====================================================================
-A basic fully connected neural network (ANN) to classify handwritten
-digit images (0-9) from the MNIST dataset.
+A fully-featured ML pipeline to classify handwritten digit images (0-9)
+from the MNIST dataset. This script demonstrates:
 
-Covers:
     - Data loading & preprocessing
-    - Model construction with Dense layers
-    - Training & validation
-    - Evaluation on the test set
-    - Visualization of training history and sample predictions
-    - Exporting model weights to JSON for web-based inference
+    - Model construction with Dense layers + Dropout regularization
+    - Save & load trained model (no retraining needed)
+    - Training & validation with learning curves
+    - Full evaluation: accuracy, confusion matrix, per-class report
+    - Architecture comparison across 3 ANN variants
+    - CNN benchmark comparison
+    - Hyperparameter (epochs) sensitivity analysis
 """
+
+import os
+import json
 
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")                       # non-interactive backend (no display needed)
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import os
-import json
+import matplotlib.gridspec as gridspec
+import seaborn as sns
+
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    ConfusionMatrixDisplay,
+)
 
 from tensorflow import keras
 from tensorflow.keras import layers
 
+# ──────────────────────────────────────────────────────────────
+# Configuration
+# ──────────────────────────────────────────────────────────────
+MODEL_SAVE_PATH = "saved_model/mnist_ann.keras"
+WEIGHTS_JSON    = "docs/model_weights.json"
+EPOCHS          = 15
+BATCH_SIZE      = 64
+NUM_CLASSES     = 10
+RANDOM_SEED     = 42
+np.random.seed(RANDOM_SEED)
+
+
+# ──────────────────────────────────────────────────────────────
+# 1. Data
+# ──────────────────────────────────────────────────────────────
 def load_data():
     """Loads the MNIST dataset."""
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     return (x_train, y_train), (x_test, y_test)
 
-def preprocess_data(x_train, x_test, y_train, y_test, num_classes=10):
-    """Preprocesses and normalizes MNIST images and labels."""
-    # Flatten 28x28 images → 784-element vectors
-    x_train_flat = x_train.reshape(x_train.shape[0], -1).astype("float32")
-    x_test_flat  = x_test.reshape(x_test.shape[0], -1).astype("float32")
 
-    # Normalize pixel values from [0, 255] → [0, 1]
-    x_train_flat /= 255.0
-    x_test_flat  /= 255.0
-
-    # One-hot encode labels
+def preprocess_data(x_train, x_test, y_train, y_test, num_classes=NUM_CLASSES):
+    """Flattens, normalizes images and one-hot encodes labels."""
+    x_train_flat = x_train.reshape(x_train.shape[0], -1).astype("float32") / 255.0
+    x_test_flat  = x_test.reshape(x_test.shape[0],  -1).astype("float32") / 255.0
     y_train_ohe  = keras.utils.to_categorical(y_train, num_classes)
-    y_test_ohe   = keras.utils.to_categorical(y_test, num_classes)
-
+    y_test_ohe   = keras.utils.to_categorical(y_test,  num_classes)
     return x_train_flat, x_test_flat, y_train_ohe, y_test_ohe
 
-def build_model(input_shape=(784,), num_classes=10):
-    """Builds a Sequential neural network model with three Dense layers."""
+
+# ──────────────────────────────────────────────────────────────
+# 2. Model Builders
+# ──────────────────────────────────────────────────────────────
+def build_model(input_shape=(784,), num_classes=NUM_CLASSES,
+                units=(128, 64), dropout_rate=0.2):
+    """
+    Builds a Sequential ANN with Dropout regularization.
+
+    Args:
+        input_shape  : shape of flattened input (784,)
+        num_classes  : number of output classes (10)
+        units        : tuple of hidden layer sizes
+        dropout_rate : fraction of neurons dropped during training
+    """
+    model_layers = [keras.Input(shape=input_shape)]
+    for u in units:
+        model_layers.append(layers.Dense(u, activation="relu"))
+        model_layers.append(layers.Dropout(dropout_rate))
+    model_layers.append(layers.Dense(num_classes, activation="softmax", name="output"))
+
+    model = keras.Sequential(model_layers)
+    return model
+
+
+def build_cnn(input_shape=(28, 28, 1), num_classes=NUM_CLASSES):
+    """Builds a small CNN for benchmarking against the ANN."""
     model = keras.Sequential([
         keras.Input(shape=input_shape),
-        layers.Dense(128, activation="relu", name="hidden_1"),
-        layers.Dense(64,  activation="relu",                     name="hidden_2"),
-        layers.Dense(num_classes, activation="softmax",          name="output"),
+        layers.Conv2D(32, (3, 3), activation="relu"),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation="relu"),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(64, activation="relu"),
+        layers.Dropout(0.2),
+        layers.Dense(num_classes, activation="softmax", name="output"),
     ])
     return model
 
+
+# ──────────────────────────────────────────────────────────────
+# 3. Compile & Train
+# ──────────────────────────────────────────────────────────────
 def compile_model(model):
-    """Compiles the model with optimizer, loss, and metrics."""
+    """Compiles with Adam optimizer and categorical crossentropy loss."""
     model.compile(
         optimizer="adam",
         loss="categorical_crossentropy",
@@ -63,139 +115,410 @@ def compile_model(model):
     )
     return model
 
-def train_model(model, x_train, y_train, epochs=10, batch_size=32, validation_split=0.2):
-    """Trains the neural network model."""
-    print("\n🚀 Starting training ...\n")
+
+def train_model(model, x_train, y_train, epochs=EPOCHS,
+                batch_size=BATCH_SIZE, validation_split=0.1, verbose=1):
+    """Trains the model and returns the history object."""
+    early_stop = keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=3, restore_best_weights=True
+    )
     history = model.fit(
         x_train, y_train,
         epochs=epochs,
         batch_size=batch_size,
         validation_split=validation_split,
-        verbose=1,
+        callbacks=[early_stop],
+        verbose=verbose,
     )
     return history
 
-def export_weights_to_json(model, output_path="docs/model_weights.json"):
-    """Extracts weights and biases from the trained model and exports them to JSON.
-    
-    This matches the shapes of the Dense layers:
-      - Layer 1: W1 (784x128), b1 (128)
-      - Layer 2: W2 (128x64), b2 (64)
-      - Layer 3: W3 (64x10), b3 (10)
-    """
+
+# ──────────────────────────────────────────────────────────────
+# 4. Save / Load
+# ──────────────────────────────────────────────────────────────
+def save_model(model, path=MODEL_SAVE_PATH):
+    """Saves the trained Keras model to disk."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    model.save(path)
+    print(f"💾 Model saved → {path}")
+
+
+def load_saved_model(path=MODEL_SAVE_PATH):
+    """Loads a previously saved Keras model from disk."""
+    if os.path.exists(path):
+        model = keras.models.load_model(path)
+        print(f"✅ Loaded saved model from {path}")
+        return model
+    return None
+
+
+def export_weights_to_json(model, output_path=WEIGHTS_JSON):
+    """Exports weights of the three Dense layers to JSON for browser inference."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    weights_dict = {
-        "W1": model.get_layer("hidden_1").get_weights()[0].tolist(),
-        "b1": model.get_layer("hidden_1").get_weights()[1].tolist(),
-        "W2": model.get_layer("hidden_2").get_weights()[0].tolist(),
-        "b2": model.get_layer("hidden_2").get_weights()[1].tolist(),
-        "W3": model.get_layer("output").get_weights()[0].tolist(),
-        "b3": model.get_layer("output").get_weights()[1].tolist()
+
+    dense_layers = [l for l in model.layers if isinstance(l, layers.Dense)]
+    named = {
+        "hidden_1": dense_layers[0],
+        "hidden_2": dense_layers[1],
+        "output":   dense_layers[2],
     }
-    
+
+    weights_dict = {}
+    for key, layer in named.items():
+        W, b = layer.get_weights()
+        weights_dict[f"W_{key}"] = W.tolist()
+        weights_dict[f"b_{key}"] = b.tolist()
+
+    # Also keep legacy keys for the web app
+    W1, b1 = dense_layers[0].get_weights()
+    W2, b2 = dense_layers[1].get_weights()
+    W3, b3 = dense_layers[2].get_weights()
+    weights_dict.update({
+        "W1": W1.tolist(), "b1": b1.tolist(),
+        "W2": W2.tolist(), "b2": b2.tolist(),
+        "W3": W3.tolist(), "b3": b3.tolist(),
+    })
+
     with open(output_path, "w") as f:
         json.dump(weights_dict, f)
-    print(f"📦 Model weights successfully exported to JSON → {output_path}")
+    print(f"📦 Weights exported → {output_path}")
 
-def save_plots(history, model, x_test_flat, x_test, y_test_ohe, y_test):
-    """Saves training history plots and sample predictions."""
-    # 1. Training History Plot
+
+# ──────────────────────────────────────────────────────────────
+# 5. Evaluation & Visualization
+# ──────────────────────────────────────────────────────────────
+def plot_training_history(history, title="ANN Training History",
+                          save_path="training_history.png"):
+    """Plots accuracy and loss curves from training history."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle(title, fontsize=15, fontweight="bold")
 
-    # Accuracy curves
-    ax1.plot(history.history["accuracy"],     label="Train Accuracy", linewidth=2)
-    ax1.plot(history.history["val_accuracy"], label="Val Accuracy",   linewidth=2)
-    ax1.set_title("Model Accuracy", fontsize=14, fontweight="bold")
-    ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Accuracy")
-    ax1.legend(loc="lower right")
-    ax1.grid(True, alpha=0.3)
+    ax1.plot(history.history["accuracy"],     label="Train", linewidth=2)
+    ax1.plot(history.history["val_accuracy"], label="Val",   linewidth=2, linestyle="--")
+    ax1.set_title("Accuracy")
+    ax1.set_xlabel("Epoch"); ax1.set_ylabel("Accuracy")
+    ax1.legend(); ax1.grid(True, alpha=0.3)
 
-    # Loss curves
-    ax2.plot(history.history["loss"],     label="Train Loss", linewidth=2)
-    ax2.plot(history.history["val_loss"], label="Val Loss",   linewidth=2)
-    ax2.set_title("Model Loss", fontsize=14, fontweight="bold")
-    ax2.set_xlabel("Epoch")
-    ax2.set_ylabel("Loss")
-    ax2.legend(loc="upper right")
-    ax2.grid(True, alpha=0.3)
+    ax2.plot(history.history["loss"],     label="Train", linewidth=2)
+    ax2.plot(history.history["val_loss"], label="Val",   linewidth=2, linestyle="--")
+    ax2.set_title("Loss")
+    ax2.set_xlabel("Epoch"); ax2.set_ylabel("Loss")
+    ax2.legend(); ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig("training_history.png", dpi=150)
-    print("📊 Training history plot saved → training_history.png")
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"📊 Training history → {save_path}")
 
-    # 2. Sample Predictions Plot
-    predictions = model.predict(x_test_flat[:10], verbose=0)
-    predicted_labels = np.argmax(predictions, axis=1)
-    actual_labels    = y_test[:10]
+
+def plot_confusion_matrix(model, x_test, y_test_raw,
+                          save_path="confusion_matrix.png"):
+    """
+    Generates and saves a confusion matrix heatmap.
+
+    Args:
+        y_test_raw : integer labels (not one-hot encoded)
+    """
+    y_pred = np.argmax(model.predict(x_test, verbose=0), axis=1)
+    cm     = confusion_matrix(y_test_raw, y_pred)
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=list(range(10)))
+    disp.plot(ax=ax, colorbar=True, cmap="Blues")
+    ax.set_title("Confusion Matrix – MNIST ANN", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"📊 Confusion matrix → {save_path}")
+    return cm
+
+
+def print_classification_report(model, x_test, y_test_raw):
+    """Prints a per-class precision, recall, and F1-score report."""
+    y_pred = np.argmax(model.predict(x_test, verbose=0), axis=1)
+    report = classification_report(
+        y_test_raw, y_pred,
+        target_names=[f"Digit {i}" for i in range(10)]
+    )
+    print("\n" + "=" * 60)
+    print("  Per-Class Classification Report")
+    print("=" * 60)
+    print(report)
+    return report
+
+
+def plot_sample_predictions(model, x_test, x_test_raw, y_test_raw,
+                            n=10, save_path="sample_predictions.png"):
+    """Visualises n test images with predicted vs actual labels."""
+    preds = np.argmax(model.predict(x_test[:n], verbose=0), axis=1)
 
     fig, axes = plt.subplots(2, 5, figsize=(14, 6))
+    fig.suptitle("Sample Predictions (green = correct, red = wrong)",
+                 fontsize=13, fontweight="bold", y=1.02)
     for i, ax in enumerate(axes.flat):
-        ax.imshow(x_test[i], cmap="gray")
-        color = "green" if predicted_labels[i] == actual_labels[i] else "red"
-        ax.set_title(
-            f"Pred: {predicted_labels[i]}  |  Actual: {actual_labels[i]}",
-            fontsize=10, color=color, fontweight="bold",
-        )
+        ax.imshow(x_test_raw[i], cmap="gray")
+        color = "green" if preds[i] == y_test_raw[i] else "red"
+        ax.set_title(f"Pred: {preds[i]}  Actual: {y_test_raw[i]}",
+                     fontsize=9, color=color, fontweight="bold")
         ax.axis("off")
-
-    plt.suptitle("Sample Predictions (green = correct, red = wrong)",
-                 fontsize=14, fontweight="bold", y=1.02)
     plt.tight_layout()
-    plt.savefig("sample_predictions.png", dpi=150, bbox_inches="tight")
-    print("🖼️  Sample predictions plot saved → sample_predictions.png")
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"🖼️  Sample predictions → {save_path}")
 
+
+# ──────────────────────────────────────────────────────────────
+# 6. Architecture Comparison
+# ──────────────────────────────────────────────────────────────
+ARCHITECTURES = {
+    "ANN-Small  (64→32)":     (64, 32),
+    "ANN-Medium (128→64)":    (128, 64),
+    "ANN-Large  (256→128→64)":(256, 128, 64),
+}
+
+
+def compare_architectures(x_train, y_train_ohe, x_test, y_test_ohe,
+                           save_path="architecture_comparison.png"):
+    """
+    Trains 3 ANN variants, compares their validation accuracy,
+    and saves a bar chart.
+    """
+    print("\n" + "=" * 60)
+    print("  Architecture Comparison")
+    print("=" * 60)
+
+    results = {}
+    for name, units in ARCHITECTURES.items():
+        print(f"\n▶  Training {name} …")
+        m = build_model(units=units)
+        m = compile_model(m)
+        h = train_model(m, x_train, y_train_ohe, epochs=10, verbose=0)
+        _, acc = m.evaluate(x_test, y_test_ohe, verbose=0)
+        params = m.count_params()
+        results[name] = {"accuracy": acc * 100, "params": params}
+        print(f"   Accuracy: {acc*100:.2f}%  |  Parameters: {params:,}")
+
+    # Bar chart
+    names    = list(results.keys())
+    accs     = [results[n]["accuracy"] for n in names]
+    params   = [results[n]["params"]   for n in names]
+    colors   = ["#3b82f6", "#10b981", "#f59e0b"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle("ANN Architecture Comparison", fontsize=14, fontweight="bold")
+
+    bars = ax1.bar(names, accs, color=colors, edgecolor="white", linewidth=1.2)
+    ax1.set_ylabel("Test Accuracy (%)"); ax1.set_ylim(95, 100)
+    ax1.set_title("Accuracy by Architecture")
+    for bar, acc in zip(bars, accs):
+        ax1.text(bar.get_x() + bar.get_width() / 2,
+                 bar.get_height() + 0.05,
+                 f"{acc:.2f}%", ha="center", fontweight="bold", fontsize=10)
+    ax1.tick_params(axis="x", labelrotation=15)
+    ax1.grid(axis="y", alpha=0.3)
+
+    bars2 = ax2.bar(names, params, color=colors, edgecolor="white", linewidth=1.2)
+    ax2.set_ylabel("Parameter Count"); ax2.set_title("Model Complexity")
+    for bar, p in zip(bars2, params):
+        ax2.text(bar.get_x() + bar.get_width() / 2,
+                 bar.get_height() + 500,
+                 f"{p:,}", ha="center", fontsize=9)
+    ax2.tick_params(axis="x", labelrotation=15)
+    ax2.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"\n📊 Architecture comparison → {save_path}")
+    return results
+
+
+# ──────────────────────────────────────────────────────────────
+# 7. CNN Benchmark
+# ──────────────────────────────────────────────────────────────
+def benchmark_cnn(x_train_raw, y_train_ohe, x_test_raw, y_test_ohe,
+                  ann_accuracy, save_path="benchmark_comparison.png"):
+    """
+    Trains a small CNN and compares accuracy vs the best ANN.
+    """
+    print("\n" + "=" * 60)
+    print("  CNN Benchmark")
+    print("=" * 60)
+
+    # Reshape for CNN input: (N, 28, 28, 1)
+    x_train_cnn = x_train_raw.reshape(-1, 28, 28, 1).astype("float32") / 255.0
+    x_test_cnn  = x_test_raw.reshape(-1, 28, 28, 1).astype("float32") / 255.0
+
+    cnn = build_cnn()
+    cnn = compile_model(cnn)
+    print("\n▶  Training CNN …")
+    train_model(cnn, x_train_cnn, y_train_ohe, epochs=10, verbose=0)
+    _, cnn_acc = cnn.evaluate(x_test_cnn, y_test_ohe, verbose=0)
+    print(f"   CNN Accuracy  : {cnn_acc*100:.2f}%")
+    print(f"   Best ANN Acc  : {ann_accuracy:.2f}%")
+
+    # Comparison bar chart
+    labels   = ["Best ANN\n(256→128→64)", "CNN\n(Conv→Conv→Dense)"]
+    accs     = [ann_accuracy, cnn_acc * 100]
+    params   = [sum(p.numpy().size for p in cnn.non_trainable_weights +
+                    cnn.trainable_weights)] # CNN params
+    ann_params = build_model(units=(256, 128, 64)).count_params()
+    cnn_params = cnn.count_params()
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig.suptitle("ANN vs CNN Benchmark", fontsize=14, fontweight="bold")
+
+    colors = ["#3b82f6", "#ef4444"]
+    bars = axes[0].bar(labels, accs, color=colors, edgecolor="white", linewidth=1.5)
+    axes[0].set_ylabel("Test Accuracy (%)"); axes[0].set_ylim(96, 100)
+    axes[0].set_title("Accuracy")
+    for bar, acc in zip(bars, accs):
+        axes[0].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 0.02,
+                     f"{acc:.2f}%", ha="center", fontweight="bold")
+    axes[0].grid(axis="y", alpha=0.3)
+
+    p_bars = axes[1].bar(labels, [ann_params, cnn_params],
+                         color=colors, edgecolor="white", linewidth=1.5)
+    axes[1].set_ylabel("Parameter Count"); axes[1].set_title("Model Complexity")
+    for bar, p in zip(p_bars, [ann_params, cnn_params]):
+        axes[1].text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() + 200,
+                     f"{p:,}", ha="center", fontsize=9)
+    axes[1].grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"📊 Benchmark comparison → {save_path}")
+    return cnn_acc * 100
+
+
+# ──────────────────────────────────────────────────────────────
+# 8. Hyperparameter Analysis
+# ──────────────────────────────────────────────────────────────
+def hyperparameter_analysis(x_train, y_train_ohe, x_test, y_test_ohe,
+                             save_path="hyperparameter_analysis.png"):
+    """
+    Sweeps over batch sizes and dropout rates to show their effect
+    on test accuracy.
+    """
+    print("\n" + "=" * 60)
+    print("  Hyperparameter Sensitivity Analysis")
+    print("=" * 60)
+
+    # Batch size sweep
+    batch_sizes = [16, 32, 64, 128, 256]
+    batch_accs  = []
+    for bs in batch_sizes:
+        m = build_model(); m = compile_model(m)
+        train_model(m, x_train, y_train_ohe, epochs=8, batch_size=bs, verbose=0)
+        _, acc = m.evaluate(x_test, y_test_ohe, verbose=0)
+        batch_accs.append(acc * 100)
+        print(f"   Batch {bs:>3}: {acc*100:.2f}%")
+
+    # Dropout sweep
+    dropout_rates = [0.0, 0.1, 0.2, 0.3, 0.4]
+    dropout_accs  = []
+    for dr in dropout_rates:
+        m = build_model(dropout_rate=dr); m = compile_model(m)
+        train_model(m, x_train, y_train_ohe, epochs=8, verbose=0)
+        _, acc = m.evaluate(x_test, y_test_ohe, verbose=0)
+        dropout_accs.append(acc * 100)
+        print(f"   Dropout {dr}: {acc*100:.2f}%")
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle("Hyperparameter Sensitivity Analysis", fontsize=14, fontweight="bold")
+
+    ax1.plot([str(b) for b in batch_sizes], batch_accs, "o-",
+             color="#3b82f6", linewidth=2, markersize=8)
+    ax1.set_title("Batch Size vs Accuracy")
+    ax1.set_xlabel("Batch Size"); ax1.set_ylabel("Test Accuracy (%)")
+    ax1.grid(True, alpha=0.3)
+    for x, y in zip(range(len(batch_sizes)), batch_accs):
+        ax1.annotate(f"{y:.1f}%", (x, y), textcoords="offset points",
+                     xytext=(0, 10), ha="center", fontsize=9)
+
+    ax2.plot([str(d) for d in dropout_rates], dropout_accs, "s-",
+             color="#10b981", linewidth=2, markersize=8)
+    ax2.set_title("Dropout Rate vs Accuracy")
+    ax2.set_xlabel("Dropout Rate"); ax2.set_ylabel("Test Accuracy (%)")
+    ax2.grid(True, alpha=0.3)
+    for x, y in zip(range(len(dropout_rates)), dropout_accs):
+        ax2.annotate(f"{y:.1f}%", (x, y), textcoords="offset points",
+                     xytext=(0, 10), ha="center", fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"📊 Hyperparameter analysis → {save_path}")
+
+
+# ──────────────────────────────────────────────────────────────
+# 9. Main Pipeline
+# ──────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
-    print("  MNIST Image Classification – Simple ANN")
+    print("  MNIST ANN Classifier — Full Evaluation Pipeline")
     print("=" * 60)
 
-    # 1. Load data
+    # ── Data ──────────────────────────────────────────────────
     (x_train, y_train), (x_test, y_test) = load_data()
-    print("\nDataset loaded successfully!")
-    print(f"  Training samples : {x_train.shape[0]}  | Image shape: {x_train.shape[1:]}")
-    print(f"  Test samples     : {x_test.shape[0]}   | Image shape: {x_test.shape[1:]}")
-    print(f"  Number of classes: {len(np.unique(y_train))}")
-
-    # 2. Preprocess data
-    num_classes = 10
     x_train_flat, x_test_flat, y_train_ohe, y_test_ohe = preprocess_data(
-        x_train, x_test, y_train, y_test, num_classes
+        x_train, x_test, y_train, y_test
     )
-    print("\nAfter preprocessing:")
-    print(f"  x_train shape : {x_train_flat.shape}")
-    print(f"  x_test  shape : {x_test_flat.shape}")
-    print(f"  y_train shape : {y_train_ohe.shape}  (one-hot)")
+    print(f"\n  Train: {x_train_flat.shape}  Test: {x_test_flat.shape}")
 
-    # 3. Build & Compile Model
-    model = build_model(input_shape=(784,), num_classes=num_classes)
-    model.summary()
-    model = compile_model(model)
+    # ── Train or Load ─────────────────────────────────────────
+    model = load_saved_model()
+    if model is None:
+        print("\n🚀 No saved model found — training from scratch …\n")
+        model = build_model(units=(128, 64), dropout_rate=0.2)
+        model = compile_model(model)
+        model.summary()
+        history = train_model(model, x_train_flat, y_train_ohe,
+                              epochs=EPOCHS, batch_size=BATCH_SIZE)
+        save_model(model)
+        plot_training_history(history)
+    else:
+        print("⚡ Skipping training — using saved model.")
 
-    # 4. Train Model
-    EPOCHS = 10
-    BATCH_SIZE = 32
-    history = train_model(
-        model, x_train_flat, y_train_ohe,
-        epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2
-    )
-
-    # 5. Evaluate Model
-    test_loss, test_accuracy = model.evaluate(x_test_flat, y_test_ohe, verbose=0)
-    print("\n" + "=" * 60)
+    # ── Core Evaluation ───────────────────────────────────────
+    test_loss, test_acc = model.evaluate(x_test_flat, y_test_ohe, verbose=0)
+    print(f"\n{'='*60}")
     print(f"  Test Loss     : {test_loss:.4f}")
-    print(f"  Test Accuracy : {test_accuracy * 100:.2f}%")
-    print("=" * 60)
+    print(f"  Test Accuracy : {test_acc*100:.2f}%")
+    print(f"{'='*60}")
 
-    # 6. Save visualizations
-    save_plots(history, model, x_test_flat, x_test, y_test_ohe, y_test)
+    # ── Confusion Matrix ──────────────────────────────────────
+    plot_confusion_matrix(model, x_test_flat, y_test)
 
-    # 7. Export weights for web app
-    export_weights_to_json(model, "docs/model_weights.json")
+    # ── Per-Class Report ──────────────────────────────────────
+    print_classification_report(model, x_test_flat, y_test)
 
-    print("\n✅ Done! All steps completed successfully.\n")
+    # ── Sample Predictions ────────────────────────────────────
+    plot_sample_predictions(model, x_test_flat, x_test, y_test)
+
+    # ── Export Weights for Web App ────────────────────────────
+    export_weights_to_json(model)
+
+    # ── Architecture Comparison ───────────────────────────────
+    arch_results = compare_architectures(
+        x_train_flat, y_train_ohe, x_test_flat, y_test_ohe
+    )
+    best_acc = max(r["accuracy"] for r in arch_results.values())
+
+    # ── CNN Benchmark ─────────────────────────────────────────
+    benchmark_cnn(x_train, y_train_ohe, x_test, y_test_ohe, best_acc)
+
+    # ── Hyperparameter Analysis ───────────────────────────────
+    hyperparameter_analysis(x_train_flat, y_train_ohe, x_test_flat, y_test_ohe)
+
+    print("\n" + "=" * 60)
+    print("  ✅ All steps completed. Check generated PNG files.")
+    print("=" * 60 + "\n")
+
 
 if __name__ == "__main__":
     main()
-
