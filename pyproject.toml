@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "mnist-ann-classifier"
+version = "2.0.0"
+description = "MNIST digit classifier using a fully connected ANN with complete evaluation pipeline and interactive Gradio demo"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Mukilan S", email = "mukilan.s.2024.aiml@rajalakshmi.edu.in" }
+]
+keywords = [
+  "mnist", "deep-learning", "neural-network", "image-classification",
+  "tensorflow", "keras", "ann", "gradio", "explainability"
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+dependencies = [
+  "tensorflow>=2.20",
+  "numpy>=2.0",
+  "matplotlib>=3.9",
+  "seaborn>=0.13",
+  "scikit-learn>=1.6",
+]
+
+[project.optional-dependencies]
+demo = ["gradio>=4.0"]
+dev  = ["pytest>=7.0", "ruff>=0.4", "jupyter>=1.0"]
+all  = ["mnist-ann-classifier[demo,dev]"]
+
+[project.urls]
+Homepage      = "https://github.com/Mukilan-s18/mnist-ann-classifier"
+Repository    = "https://github.com/Mukilan-s18/mnist-ann-classifier"
+"Live Demo"   = "https://mukilan-s18.github.io/mnist-ann-classifier/"
+"Bug Tracker" = "https://github.com/Mukilan-s18/mnist-ann-classifier/issues"
+
+[project.scripts]
+mnist-train = "mnist_ann_classifier:main"
+mnist-demo  = "app:demo.launch"
+
+[tool.ruff]
+line-length    = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+addopts      = "-v"
+filterwarnings = ["ignore::DeprecationWarning"]
