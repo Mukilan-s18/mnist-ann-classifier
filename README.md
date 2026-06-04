@@ -48,7 +48,7 @@ $$\hat{y} = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
 
 ## 📊 Results
 
-### Accuracy: **>97.5%** on the MNIST test set (10,000 samples)
+### Accuracy: **97.86%** on the MNIST test set (10,000 samples)
 
 ### Training Curves
 ![Training History](training_history.png)
@@ -60,15 +60,24 @@ $$\hat{y} = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
 ![Sample Predictions](sample_predictions.png)
 
 ### Architecture Comparison
+![Architecture Comparison](architecture_comparison.png)
+
+### CNN Benchmark
+![Benchmark Comparison](benchmark_comparison.png)
+
+### Hyperparameter Sensitivity
+![Hyperparameter Analysis](hyperparameter_analysis.png)
+
+### Results Table
 
 | Architecture | Test Accuracy | Parameters |
 |---|---|---|
-| ANN Small (64→32) | ~97.1% | ~52,000 |
-| **ANN Medium (128→64)** ✅ | **~97.7%** | **~109,000** |
-| ANN Large (256→128→64) | ~97.8% | ~236,000 |
-| CNN (Conv32→Conv64→Dense64) | ~99.1% | ~94,000 |
+| ANN Small (64→32) | 97.06% | 52,650 |
+| **ANN Medium (128→64)** ✅ | **98.08%** | **109,386** |
+| ANN Large (256→128→64) | 97.78% | 242,762 |
+| CNN (Conv32→Conv64→Dense64) | **99.07%** | ~94,000 |
 
-> **Insight:** The medium ANN offers the best accuracy-to-complexity ratio. The CNN achieves ~1.5% higher accuracy using fewer parameters by exploiting spatial structure.
+> **Insight:** The medium ANN offers the best accuracy-to-complexity ratio. The CNN achieves ~1% higher accuracy by exploiting spatial structure, at the cost of slower training.
 
 ---
 
