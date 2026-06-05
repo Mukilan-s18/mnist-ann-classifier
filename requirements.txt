@@ -11,3 +11,4 @@ ruff
 
 # Notebook
 jupyter
+mlflow>=2.0

@@ -31,3 +31,6 @@ saved_model/
 architecture_comparison.png
 benchmark_comparison.png
 hyperparameter_analysis.png
+
+# MLflow
+mlruns/

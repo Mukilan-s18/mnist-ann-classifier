@@ -17,6 +17,9 @@ from the MNIST dataset. This script demonstrates:
 import os
 import json
 
+import mlflow
+import mlflow.keras
+
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -459,8 +462,12 @@ def hyperparameter_analysis(x_train, y_train_ohe, x_test, y_test_ohe,
 # 9. Main Pipeline
 # ──────────────────────────────────────────────────────────────
 def main():
+    # ── MLflow Tracking Setup ─────────────────────────────────
+    mlflow.set_experiment("MNIST-ANN-Classifier")
+    mlflow.tensorflow.autolog()
+
     print("=" * 60)
-    print("  MNIST ANN Classifier — Full Evaluation Pipeline")
+    print("  MNIST ANN Classifier — Full Evaluation Pipeline (MLflow Enabled)")
     print("=" * 60)
 
     # ── Data ──────────────────────────────────────────────────
@@ -486,6 +493,12 @@ def main():
 
     # ── Core Evaluation ───────────────────────────────────────
     test_loss, test_acc = model.evaluate(x_test_flat, y_test_ohe, verbose=0)
+    
+    # Log final test metrics to MLflow if inside an active run
+    if mlflow.active_run():
+        mlflow.log_metric("test_loss", test_loss)
+        mlflow.log_metric("test_accuracy", test_acc)
+
     print(f"\n{'='*60}")
     print(f"  Test Loss     : {test_loss:.4f}")
     print(f"  Test Accuracy : {test_acc*100:.2f}%")
