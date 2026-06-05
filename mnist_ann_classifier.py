@@ -16,9 +16,7 @@ from the MNIST dataset. This script demonstrates:
 
 import os
 import json
-
 import mlflow
-import mlflow.keras
 
 import numpy as np
 import matplotlib
