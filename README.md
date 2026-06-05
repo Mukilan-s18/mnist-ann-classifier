@@ -2,9 +2,10 @@
 
 [![CI Pipeline](https://github.com/Mukilan-s18/mnist-ann-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/Mukilan-s18/mnist-ann-classifier/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
-[![TensorFlow 2.20](https://img.shields.io/badge/TensorFlow-2.20-orange.svg)](https://tensorflow.org)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6-blueviolet.svg)](https://scikit-learn.org)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![TensorFlow 2.21](https://img.shields.io/badge/TensorFlow-2.21-orange.svg)](https://tensorflow.org)
+[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Model Card](https://img.shields.io/badge/Model%20Card-Included-purple.svg)](MODEL_CARD.md)
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://mukilan-s18.github.io/mnist-ann-classifier/)
 [![Open in Jupyter](https://img.shields.io/badge/Notebook-Jupyter-orange.svg)](notebook.ipynb)
 
