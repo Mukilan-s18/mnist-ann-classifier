@@ -14,23 +14,20 @@ from the MNIST dataset. This script demonstrates:
     - Hyperparameter (epochs) sensitivity analysis
 """
 
-import os
 import json
-import mlflow
+import os
 
-import numpy as np
 import matplotlib
+import mlflow
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import seaborn as sns
-
 from sklearn.metrics import (
-    confusion_matrix,
-    classification_report,
     ConfusionMatrixDisplay,
+    classification_report,
+    confusion_matrix,
 )
-
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -157,7 +154,7 @@ def export_weights_to_json(model, output_path=WEIGHTS_JSON):
     """Exports weights of the three Dense layers to JSON for browser inference."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    dense_layers = [l for l in model.layers if isinstance(l, layers.Dense)]
+    dense_layers = [layer for layer in model.layers if isinstance(layer, layers.Dense)]
     named = {
         "hidden_1": dense_layers[0],
         "hidden_2": dense_layers[1],
@@ -294,7 +291,7 @@ def compare_architectures(x_train, y_train_ohe, x_test, y_test_ohe,
         print(f"\n▶  Training {name} …")
         m = build_model(units=units)
         m = compile_model(m)
-        h = train_model(m, x_train, y_train_ohe, epochs=10, verbose=0)
+        _ = train_model(m, x_train, y_train_ohe, epochs=10, verbose=0)
         _, acc = m.evaluate(x_test, y_test_ohe, verbose=0)
         params = m.count_params()
         results[name] = {"accuracy": acc * 100, "params": params}
@@ -362,8 +359,6 @@ def benchmark_cnn(x_train_raw, y_train_ohe, x_test_raw, y_test_ohe,
     # Comparison bar chart
     labels   = ["Best ANN\n(256→128→64)", "CNN\n(Conv→Conv→Dense)"]
     accs     = [ann_accuracy, cnn_acc * 100]
-    params   = [sum(p.numpy().size for p in cnn.non_trainable_weights +
-                    cnn.trainable_weights)] # CNN params
     ann_params = build_model(units=(256, 128, 64)).count_params()
     cnn_params = cnn.count_params()
 
@@ -491,7 +486,7 @@ def main():
 
     # ── Core Evaluation ───────────────────────────────────────
     test_loss, test_acc = model.evaluate(x_test_flat, y_test_ohe, verbose=0)
-    
+
     # Log final test metrics to MLflow if inside an active run
     if mlflow.active_run():
         mlflow.log_metric("test_loss", test_loss)

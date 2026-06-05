@@ -5,12 +5,12 @@ Covers: data loading, preprocessing, model architecture,
 """
 
 import os
-import shutil
+import sys
 import tempfile
+
 import numpy as np
 from tensorflow import keras
 
-import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import mnist_ann_classifier as clf
 
@@ -59,7 +59,7 @@ def test_preprocess_data():
 def test_build_model_default():
     """Default model should have 3 Dense layers and correct output size."""
     model = clf.build_model()
-    dense_layers = [l for l in model.layers if isinstance(l, keras.layers.Dense)]
+    dense_layers = [layer for layer in model.layers if isinstance(layer, keras.layers.Dense)]
     assert len(dense_layers) == 3
     assert dense_layers[-1].units == 10
     assert dense_layers[-1].activation.__name__ == "softmax"
@@ -68,7 +68,7 @@ def test_build_model_default():
 def test_build_model_custom_units():
     """Model should adapt to custom architecture specification."""
     model = clf.build_model(units=(256, 128, 64))
-    dense_layers = [l for l in model.layers if isinstance(l, keras.layers.Dense)]
+    dense_layers = [layer for layer in model.layers if isinstance(layer, keras.layers.Dense)]
     assert dense_layers[0].units == 256
     assert dense_layers[1].units == 128
     assert dense_layers[2].units == 64
@@ -78,7 +78,7 @@ def test_build_model_custom_units():
 def test_build_model_dropout():
     """Model should contain Dropout layers equal to number of hidden units."""
     model = clf.build_model(units=(128, 64), dropout_rate=0.3)
-    dropout_layers = [l for l in model.layers if isinstance(l, keras.layers.Dropout)]
+    dropout_layers = [layer for layer in model.layers if isinstance(layer, keras.layers.Dropout)]
     assert len(dropout_layers) == 2  # one per hidden layer
 
 
