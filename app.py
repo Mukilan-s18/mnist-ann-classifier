@@ -8,16 +8,16 @@ and instantly see:
   • Saliency heatmap showing which pixels influenced the prediction
 """
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from PIL import Image
+
 import gradio as gr
-from tensorflow import keras
+import matplotlib.pyplot as plt
 import tensorflow as tf
-import os
+from PIL import Image
+from tensorflow import keras
 
 # ── Load model ────────────────────────────────────────────────
 MODEL_PATH = "saved_model/mnist_ann.keras"
