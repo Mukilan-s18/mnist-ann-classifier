@@ -186,7 +186,7 @@ def export_weights_to_json(model, output_path=WEIGHTS_JSON):
 # 5. Evaluation & Visualization
 # ──────────────────────────────────────────────────────────────
 def plot_training_history(history, title="ANN Training History",
-                          save_path="training_history.png"):
+                          save_path="figures/training_history.png"):
     """Plots accuracy and loss curves from training history."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     fig.suptitle(title, fontsize=15, fontweight="bold")
@@ -204,13 +204,14 @@ def plot_training_history(history, title="ANN Training History",
     ax2.legend(); ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"📊 Training history → {save_path}")
 
 
 def plot_confusion_matrix(model, x_test, y_test_raw,
-                          save_path="confusion_matrix.png"):
+                          save_path="figures/confusion_matrix.png"):
     """
     Generates and saves a confusion matrix heatmap.
 
@@ -226,6 +227,7 @@ def plot_confusion_matrix(model, x_test, y_test_raw,
     disp.plot(ax=ax, colorbar=True, cmap="Blues")
     ax.set_title("Confusion Matrix – MNIST ANN", fontsize=14, fontweight="bold")
     plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"📊 Confusion matrix → {save_path}")
@@ -247,7 +249,7 @@ def print_classification_report(model, x_test, y_test_raw):
 
 
 def plot_sample_predictions(model, x_test, x_test_raw, y_test_raw,
-                            n=10, save_path="sample_predictions.png"):
+                            n=10, save_path="figures/sample_predictions.png"):
     """Visualises n test images with predicted vs actual labels."""
     preds = np.argmax(model.predict(x_test[:n], verbose=0), axis=1)
 
@@ -261,6 +263,7 @@ def plot_sample_predictions(model, x_test, x_test_raw, y_test_raw,
                      fontsize=9, color=color, fontweight="bold")
         ax.axis("off")
     plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"🖼️  Sample predictions → {save_path}")
@@ -277,7 +280,7 @@ ARCHITECTURES = {
 
 
 def compare_architectures(x_train, y_train_ohe, x_test, y_test_ohe,
-                           save_path="architecture_comparison.png"):
+                           save_path="figures/architecture_comparison.png"):
     """
     Trains 3 ANN variants, compares their validation accuracy,
     and saves a bar chart.
@@ -326,6 +329,7 @@ def compare_architectures(x_train, y_train_ohe, x_test, y_test_ohe,
     ax2.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"\n📊 Architecture comparison → {save_path}")
@@ -336,7 +340,7 @@ def compare_architectures(x_train, y_train_ohe, x_test, y_test_ohe,
 # 7. CNN Benchmark
 # ──────────────────────────────────────────────────────────────
 def benchmark_cnn(x_train_raw, y_train_ohe, x_test_raw, y_test_ohe,
-                  ann_accuracy, save_path="benchmark_comparison.png"):
+                  ann_accuracy, save_path="figures/benchmark_comparison.png"):
     """
     Trains a small CNN and compares accuracy vs the best ANN.
     """
@@ -385,6 +389,7 @@ def benchmark_cnn(x_train_raw, y_train_ohe, x_test_raw, y_test_ohe,
     axes[1].grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"📊 Benchmark comparison → {save_path}")
@@ -395,7 +400,7 @@ def benchmark_cnn(x_train_raw, y_train_ohe, x_test_raw, y_test_ohe,
 # 8. Hyperparameter Analysis
 # ──────────────────────────────────────────────────────────────
 def hyperparameter_analysis(x_train, y_train_ohe, x_test, y_test_ohe,
-                             save_path="hyperparameter_analysis.png"):
+                             save_path="figures/hyperparameter_analysis.png"):
     """
     Sweeps over batch sizes and dropout rates to show their effect
     on test accuracy.

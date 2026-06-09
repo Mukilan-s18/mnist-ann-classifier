@@ -14,7 +14,7 @@ install:  ## Install all dependencies
 	@echo "✅ All dependencies installed"
 
 train:  ## Train the model and generate all plots
-	$(PYTHON) mnist_ann_classifier.py
+	$(PYTHON) src/mnist_ann_classifier.py
 	@echo "✅ Training complete"
 
 demo:  ## Launch the interactive Gradio demo locally
@@ -30,11 +30,10 @@ lint:  ## Run code quality checks with ruff
 	@echo "✅ Lint passed"
 
 notebook:  ## Launch the Jupyter notebook
-	/opt/homebrew/bin/jupyter notebook notebook.ipynb
+	/opt/homebrew/bin/jupyter notebook notebooks/notebook.ipynb
 
 clean:  ## Remove generated files (keeps saved model)
-	rm -f confusion_matrix.png training_history.png sample_predictions.png
-	rm -f architecture_comparison.png benchmark_comparison.png hyperparameter_analysis.png
+	rm -rf figures/*.png
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	@echo "✅ Cleaned generated files"

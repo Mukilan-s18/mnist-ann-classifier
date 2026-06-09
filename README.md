@@ -52,22 +52,22 @@ $$\hat{y} = \text{Softmax}(W_3 \cdot h_2 + b_3)$$
 ### Accuracy: **97.86%** on the MNIST test set (10,000 samples)
 
 ### Training Curves
-![Training History](training_history.png)
+![Training History](figures/training_history.png)
 
 ### Confusion Matrix
-![Confusion Matrix](confusion_matrix.png)
+![Confusion Matrix](figures/confusion_matrix.png)
 
 ### Sample Predictions
-![Sample Predictions](sample_predictions.png)
+![Sample Predictions](figures/sample_predictions.png)
 
 ### Architecture Comparison
-![Architecture Comparison](architecture_comparison.png)
+![Architecture Comparison](figures/architecture_comparison.png)
 
 ### CNN Benchmark
-![Benchmark Comparison](benchmark_comparison.png)
+![Benchmark Comparison](figures/benchmark_comparison.png)
 
 ### Hyperparameter Sensitivity
-![Hyperparameter Analysis](hyperparameter_analysis.png)
+![Hyperparameter Analysis](figures/hyperparameter_analysis.png)
 
 ### Results Table
 
@@ -124,7 +124,7 @@ make train
 
 This will:
 1. Train the ANN (or load saved model if it exists)
-2. Generate all plots (`confusion_matrix.png`, `training_history.png`, etc.)
+2. Generate all plots (`figures/confusion_matrix.png`, `figures/training_history.png`, etc.)
 3. Run architecture comparison & CNN benchmark
 4. Export weights & save model
 
@@ -155,12 +155,16 @@ mnist-ann-classifier/
 ├── Makefile                   # Quick commands for train, demo, test, clean
 ├── Dockerfile                 # Multi-stage build for easy Gradio deployment
 ├── pyproject.toml             # Standard Python packaging configuration
-├── mnist_ann_classifier.py    # Full ML pipeline (train, eval, compare, benchmark)
-├── notebook.ipynb             # Step-by-step Jupyter walkthrough
 ├── requirements.txt           # Pinned dependencies
-├── training_history.png       # Training/validation accuracy & loss curves
-├── confusion_matrix.png       # 10x10 confusion matrix heatmap
-├── sample_predictions.png     # Grid of test predictions with labels
+├── src/                       # Source code directory
+│   ├── mnist_ann_classifier.py  # Full ML pipeline (train, eval, compare, benchmark)
+│   └── scratch.py               # Scratchpad script
+├── notebooks/                 # Jupyter notebooks
+│   └── notebook.ipynb           # Step-by-step Jupyter walkthrough
+├── figures/                   # Generated evaluation plots
+│   ├── training_history.png       
+│   ├── confusion_matrix.png       
+│   └── sample_predictions.png     
 ├── saved_model/               # Saved keras model directory
 ├── docs/                      # Original GitHub Pages web demo (JS Inference)
 ├── tests/

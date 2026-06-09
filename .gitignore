@@ -29,3 +29,6 @@ saved_model/
 
 # MLflow
 mlruns/
+mlflow.db
+*.sqlite
+*.db
