@@ -19,25 +19,6 @@ import tensorflow as tf
 from PIL import Image
 from tensorflow import keras
 
-# ── Generate Dark Grid Background ─────────────────────────────
-def create_grid_background(filename="grid_bg.png"):
-    width, height = 300, 300
-    step = 30
-    bg = np.zeros((height, width, 4), dtype=np.uint8)
-    bg[:, :, 3] = 255  # Solid alpha
-    bg[:, :, 0:3] = [15, 23, 42]  # #0f172a (dark blue base)
-
-    # Grid lines #1e293b
-    grid_color = [30, 41, 59, 255]
-    for x in range(0, width, step):
-        bg[:, x:x+2] = grid_color
-    for y in range(0, height, step):
-        bg[y:y+2, :] = grid_color
-
-    Image.fromarray(bg).save(filename)
-
-create_grid_background()
-
 # ── Load model ────────────────────────────────────────────────
 MODEL_PATH = "saved_model/mnist_ann.keras"
 model = keras.models.load_model(MODEL_PATH)
@@ -286,6 +267,12 @@ h1 { color: #38bdf8 !important; text-align: center; }
 }
 """
 
+JS_DARK_MODE = """
+function() {
+    document.body.classList.add('dark');
+}
+"""
+
 TITLE = "✍️ MNIST Digit Classifier — ANN with Saliency Maps"
 
 DESCRIPTION = """
@@ -305,14 +292,13 @@ EXAMPLES_NOTE = """
 - White digit on dark background works best
 """
 
-with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
+with gr.Blocks(title="MNIST ANN Classifier", css=CSS, js=JS_DARK_MODE) as demo:
     gr.Markdown(f"# {TITLE}")
     gr.Markdown(DESCRIPTION)
 
     with gr.Row():
         with gr.Column(scale=1):
             canvas = gr.Sketchpad(
-                value="grid_bg.png",
                 label="✏️ Draw Here",
                 type="numpy",
                 image_mode="RGBA",
@@ -345,16 +331,9 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
     )
 
     clear_btn.click(
-        fn=lambda: ("grid_bg.png", None, None, None),
+        fn=lambda: (None, None, None, None),
         inputs=None,
         outputs=[canvas, prediction_label, prob_chart, saliency_plot],
-    )
-
-    # Failsafe: If the built-in trash icon is somehow clicked, restore the grid
-    canvas.clear(
-        fn=lambda: "grid_bg.png",
-        inputs=None,
-        outputs=[canvas]
     )
 
     gr.Markdown("""
