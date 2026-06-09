@@ -283,7 +283,7 @@ with gr.Blocks(title="MNIST ANN Classifier") as demo:
             gr.Markdown(EXAMPLES_NOTE)
             with gr.Row():
                 submit_btn = gr.Button("🔍 Predict", variant="primary")
-                clear_btn  = gr.ClearButton([canvas], value="🗑️ Clear")
+                clear_btn  = gr.Button("🗑️ Clear")
 
         with gr.Column(scale=1):
             prediction_label = gr.Label(
@@ -301,6 +301,12 @@ with gr.Blocks(title="MNIST ANN Classifier") as demo:
         fn=predict,
         inputs=[canvas],
         outputs=[prediction_label, prob_chart, saliency_plot],
+    )
+
+    clear_btn.click(
+        fn=lambda: (None, None, None, None),
+        inputs=None,
+        outputs=[canvas, prediction_label, prob_chart, saliency_plot],
     )
 
     gr.Markdown("""
