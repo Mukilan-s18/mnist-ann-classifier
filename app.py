@@ -240,9 +240,13 @@ h1 { color: #38bdf8 !important; text-align: center; }
         linear-gradient(to right, #1e293b 2px, transparent 2px),
         linear-gradient(to bottom, #1e293b 2px, transparent 2px) !important;
     background-position: center center !important;
-    background-color: #0f172a !important;
+    background-color: #000000 !important; /* Change this hex code for different colors! */
     border: 2px solid #334155 !important;
     border-radius: 8px !important;
+}
+/* Force the internal Gradio canvas to be transparent so our dark background shows through */
+.sketch-bg canvas, .sketch-bg .image-container {
+    background-color: transparent !important;
 }
 """
 
