@@ -245,7 +245,7 @@ h1 { color: #38bdf8 !important; text-align: center; }
     border-radius: 8px !important;
 }
 /* Force the internal Gradio canvas to be transparent so our dark background shows through */
-.sketch-bg canvas, .sketch-bg .image-container {
+.sketch-bg canvas, .sketch-bg .image-container, .sketch-bg .wrap, .sketch-bg .canvas-wrap, .sketch-bg .image-frame {
     background-color: transparent !important;
 }
 """
@@ -295,11 +295,10 @@ with gr.Blocks(title="MNIST ANN Classifier") as demo:
                 num_top_classes=3,
             )
             prob_chart = gr.Label(
-                label="📊 All Class Probabilities",
-                num_top_classes=10,
+                label="📊 Class Probabilities",
+                num_top_classes=5,
             )
-
-    saliency_plot = gr.Plot(label="🔥 Saliency Map — What the model is looking at")
+            saliency_plot = gr.Plot(label="🔥 Saliency Map — What the model is looking at")
 
     submit_btn.click(
         fn=predict,
