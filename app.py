@@ -32,22 +32,65 @@ EMOJI = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","
 def preprocess(image_array: np.ndarray) -> np.ndarray:
     """
     Converts a raw RGBA/RGB canvas image into a normalised
-    784-element float vector ready for the model.
+    784-element float vector ready for the model, perfectly
+    matching the official MNIST dataset centering algorithm.
     """
-    # Convert to PIL and grayscale
+    # 1. Convert to grayscale
     img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
-    
-    # Resize to 28x28
-    img = img.resize((28, 28), Image.LANCZOS)
     arr = np.array(img, dtype="float32")
 
-    # Auto-invert if the background is white (check top-left corner)
-    # Gradio sketchpad often has a white background. MNIST requires a black background.
+    # 2. Auto-invert if the background is white (check top-left corner)
     if arr[0, 0] > 127:
         arr = 255.0 - arr
 
-    arr = arr / 255.0
-    return arr.reshape(1, 784)
+    # 3. Normalize intensity to [0, 1] (fixes dim strokes like red brush)
+    if arr.max() > 0:
+        arr = arr / arr.max()
+
+    # 4. Find bounding box of the drawing
+    mask = arr > 0.1
+    rows = np.any(mask, axis=1)
+    cols = np.any(mask, axis=0)
+    
+    if not np.any(rows) or not np.any(cols):
+        return np.zeros((1, 784), dtype="float32")
+        
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+    
+    cropped = arr[rmin:rmax+1, cmin:cmax+1]
+    
+    # 5. Resize so the maximum dimension is 20 pixels (MNIST standard)
+    h, w = cropped.shape
+    max_dim = max(h, w)
+    scale = 20.0 / max_dim
+    new_h, new_w = max(1, int(h * scale)), max(1, int(w * scale))
+    
+    cropped_img = Image.fromarray((cropped * 255).astype(np.uint8))
+    cropped_img = cropped_img.resize((new_w, new_h), Image.LANCZOS)
+    cropped_arr = np.array(cropped_img, dtype="float32") / 255.0
+    
+    # 6. Center of mass calculation
+    y_coords, x_coords = np.indices(cropped_arr.shape)
+    total_mass = cropped_arr.sum()
+    if total_mass > 0:
+        cy = (y_coords * cropped_arr).sum() / total_mass
+        cx = (x_coords * cropped_arr).sum() / total_mass
+    else:
+        cy, cx = new_h / 2.0, new_w / 2.0
+        
+    # 7. Place into a 28x28 canvas such that center of mass is at (14, 14)
+    canvas = np.zeros((28, 28), dtype="float32")
+    start_y = int(np.round(14.0 - cy))
+    start_x = int(np.round(14.0 - cx))
+    
+    # Clamp bounds just in case
+    start_y = max(0, min(28 - new_h, start_y))
+    start_x = max(0, min(28 - new_w, start_x))
+    
+    canvas[start_y:start_y+new_h, start_x:start_x+new_w] = cropped_arr
+    
+    return canvas.reshape(1, 784)
 
 
 # ── Saliency map ──────────────────────────────────────────────
