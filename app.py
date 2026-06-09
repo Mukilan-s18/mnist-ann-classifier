@@ -14,7 +14,6 @@ import numpy as np
 matplotlib.use("Agg")
 
 import gradio as gr
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from PIL import Image
 from tensorflow import keras
@@ -130,7 +129,8 @@ def compute_saliency(input_vector: np.ndarray, class_idx: int) -> np.ndarray:
 def make_saliency_figure(original_28: np.ndarray,
                          saliency: np.ndarray,
                          pred_digit: int,
-                         confidence: float) -> plt.Figure:
+                         confidence: float):
+    import matplotlib.pyplot as plt
     """
     Creates a side-by-side figure: original digit | saliency overlay.
     """
