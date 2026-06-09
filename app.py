@@ -55,25 +55,25 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     mask = arr > 0.1
     rows = np.any(mask, axis=1)
     cols = np.any(mask, axis=0)
-    
+
     if not np.any(rows) or not np.any(cols):
         return np.zeros((1, 784), dtype="float32")
-        
+
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
-    
+
     cropped = arr[rmin:rmax+1, cmin:cmax+1]
-    
+
     # 5. Resize so the maximum dimension is 20 pixels (MNIST standard)
     h, w = cropped.shape
     max_dim = max(h, w)
     scale = 20.0 / max_dim
     new_h, new_w = max(1, int(h * scale)), max(1, int(w * scale))
-    
+
     cropped_img = Image.fromarray((cropped * 255).astype(np.uint8))
     cropped_img = cropped_img.resize((new_w, new_h), Image.LANCZOS)
     cropped_arr = np.array(cropped_img, dtype="float32") / 255.0
-    
+
     # 6. Center of mass calculation
     y_coords, x_coords = np.indices(cropped_arr.shape)
     total_mass = cropped_arr.sum()
@@ -82,18 +82,18 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
         cx = (x_coords * cropped_arr).sum() / total_mass
     else:
         cy, cx = new_h / 2.0, new_w / 2.0
-        
+
     # 7. Place into a 28x28 canvas such that center of mass is at (14, 14)
     canvas = np.zeros((28, 28), dtype="float32")
     start_y = int(np.round(14.0 - cy))
     start_x = int(np.round(14.0 - cx))
-    
+
     # Clamp bounds just in case
     start_y = max(0, min(28 - new_h, start_y))
     start_x = max(0, min(28 - new_w, start_x))
-    
+
     canvas[start_y:start_y+new_h, start_x:start_x+new_w] = cropped_arr
-    
+
     return canvas.reshape(1, 784)
 
 
@@ -245,10 +245,9 @@ h1 { color: #38bdf8 !important; text-align: center; }
 }
 .sketch-bg {
     background-size: 30px 30px !important;
-    background-image: 
+    background-image:
         linear-gradient(to right, #1e293b 2px, transparent 2px),
         linear-gradient(to bottom, #1e293b 2px, transparent 2px) !important;
-    background-position: center center !important;
     background-color: #000000 !important; /* Change this hex code for different colors! */
     border: 2px solid #334155 !important;
     border-radius: 8px !important;
