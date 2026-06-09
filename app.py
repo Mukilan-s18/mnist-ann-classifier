@@ -194,8 +194,8 @@ def predict(image):
     x = preprocess(arr)
     original_28 = x.reshape(28, 28)
 
-    # Inference
-    probs     = model.predict(x, verbose=0)[0]          # shape (10,)
+    # Inference (Bypass model.predict to prevent Apple Silicon tf.data background thread deadlocks)
+    probs     = model(x, training=False).numpy()[0]     # shape (10,)
     pred_idx  = int(np.argmax(probs))
     confidence = float(probs[pred_idx])
 
