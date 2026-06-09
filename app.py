@@ -276,6 +276,14 @@ h1 { color: #38bdf8 !important; text-align: center; }
 .sketch-bg canvas, .sketch-bg .image-container, .sketch-bg .wrap, .sketch-bg .canvas-wrap, .sketch-bg .image-frame {
     background-color: transparent !important;
 }
+/* Hide the built-in Gradio trash can icon to force use of the global Clear button */
+.sketch-bg button[aria-label="Clear"],
+.sketch-bg button[aria-label="Remove Image"],
+.sketch-bg button[aria-label="Remove"],
+.sketch-bg button[title="Clear"],
+.sketch-bg button[title="Remove"] {
+    display: none !important;
+}
 """
 
 TITLE = "✍️ MNIST Digit Classifier — ANN with Saliency Maps"
@@ -340,6 +348,13 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
         fn=lambda: ("grid_bg.png", None, None, None),
         inputs=None,
         outputs=[canvas, prediction_label, prob_chart, saliency_plot],
+    )
+
+    # Failsafe: If the built-in trash icon is somehow clicked, restore the grid
+    canvas.clear(
+        fn=lambda: "grid_bg.png",
+        inputs=None,
+        outputs=[canvas]
     )
 
     gr.Markdown("""
