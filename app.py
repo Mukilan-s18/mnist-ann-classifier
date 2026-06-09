@@ -234,6 +234,16 @@ h1 { color: #38bdf8 !important; text-align: center; }
     font-weight: 800 !important;
     text-align: center !important;
 }
+.sketch-bg {
+    background-size: 30px 30px !important;
+    background-image: 
+        linear-gradient(to right, #1e293b 2px, transparent 2px),
+        linear-gradient(to bottom, #1e293b 2px, transparent 2px) !important;
+    background-position: center center !important;
+    background-color: #0f172a !important;
+    border: 2px solid #334155 !important;
+    border-radius: 8px !important;
+}
 """
 
 TITLE = "✍️ MNIST Digit Classifier — ANN with Saliency Maps"
@@ -267,7 +277,8 @@ with gr.Blocks(title="MNIST ANN Classifier") as demo:
                 image_mode="RGBA",
                 height=300,
                 width=300,
-                brush=gr.Brush(default_size=20, colors=["#ffffff"], default_color="#ffffff"),
+                elem_classes=["sketch-bg"],
+                brush=gr.Brush(default_size=20, colors=["#ff0000", "#ffffff", "#000000"], default_color="#ff0000"),
             )
             gr.Markdown(EXAMPLES_NOTE)
             with gr.Row():
