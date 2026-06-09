@@ -130,7 +130,7 @@ def make_saliency_figure(original_28: np.ndarray,
     """
     Creates a side-by-side figure: original digit | saliency overlay.
     """
-    fig, axes = plt.subplots(1, 2, figsize=(7, 3.5))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4))
     fig.patch.set_facecolor("#0f172a")
 
     for ax in axes:
@@ -295,10 +295,11 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
                 num_top_classes=3,
             )
             prob_chart = gr.Label(
-                label="📊 Class Probabilities",
-                num_top_classes=5,
+                label="📊 All Class Probabilities",
+                num_top_classes=10,
             )
-            saliency_plot = gr.Plot(label="🔥 Saliency Map — What the model is looking at")
+
+    saliency_plot = gr.Plot(label="🔥 Saliency Map — What the model is looking at")
 
     submit_btn.click(
         fn=predict,
