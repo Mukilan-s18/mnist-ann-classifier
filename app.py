@@ -34,13 +34,19 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     Converts a raw RGBA/RGB canvas image into a normalised
     784-element float vector ready for the model.
     """
-    # Convert to PIL, resize to 28×28 greyscale
-    img = Image.fromarray(image_array.astype(np.uint8))
-    img = img.convert("L")          # greyscale
+    # If RGBA, the most reliable way to get the drawing is the Alpha channel
+    # since Gradio's Sketchpad background is transparent (Alpha=0) and strokes are opaque (Alpha=255).
+    if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+        img_data = image_array[:, :, 3]
+    else:
+        img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
+        img_data = np.array(img)
+
+    # Resize to 28x28
+    img = Image.fromarray(img_data.astype(np.uint8))
     img = img.resize((28, 28), Image.LANCZOS)
     arr = np.array(img, dtype="float32")
 
-    # Gradio sketchpad returns white-on-black; MNIST is also white-on-black
     arr = arr / 255.0
     return arr.reshape(1, 784)
 
@@ -216,7 +222,7 @@ with gr.Blocks(title="MNIST ANN Classifier") as demo:
             canvas = gr.Sketchpad(
                 label="✏️ Draw Here",
                 type="numpy",
-                image_mode="RGB",
+                image_mode="RGBA",
                 height=300,
                 width=300,
                 brush=gr.Brush(default_size=20, colors=["#ffffff"], default_color="#ffffff"),
