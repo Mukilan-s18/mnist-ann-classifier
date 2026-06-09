@@ -34,18 +34,17 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     Converts a raw RGBA/RGB canvas image into a normalised
     784-element float vector ready for the model.
     """
-    # If RGBA, the most reliable way to get the drawing is the Alpha channel
-    # since Gradio's Sketchpad background is transparent (Alpha=0) and strokes are opaque (Alpha=255).
-    if len(image_array.shape) == 3 and image_array.shape[2] == 4:
-        img_data = image_array[:, :, 3]
-    else:
-        img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
-        img_data = np.array(img)
-
+    # Convert to PIL and grayscale
+    img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
+    
     # Resize to 28x28
-    img = Image.fromarray(img_data.astype(np.uint8))
     img = img.resize((28, 28), Image.LANCZOS)
     arr = np.array(img, dtype="float32")
+
+    # Auto-invert if the background is white (check top-left corner)
+    # Gradio sketchpad often has a white background. MNIST requires a black background.
+    if arr[0, 0] > 127:
+        arr = 255.0 - arr
 
     arr = arr / 255.0
     return arr.reshape(1, 784)
