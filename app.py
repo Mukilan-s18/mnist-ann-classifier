@@ -337,7 +337,7 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
     )
 
     clear_btn.click(
-        fn=lambda: (None, None, None, None),
+        fn=lambda: ("grid_bg.png", None, None, None),
         inputs=None,
         outputs=[canvas, prediction_label, prob_chart, saliency_plot],
     )
