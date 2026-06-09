@@ -60,3 +60,7 @@ ignore = ["E501", "E702"]
 testpaths    = ["tests"]
 addopts      = "-v"
 filterwarnings = ["ignore::DeprecationWarning"]
+pythonpath   = ["src"]
+
+[tool.pyright]
+extraPaths = ["src"]

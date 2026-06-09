@@ -5,13 +5,11 @@ Covers: data loading, preprocessing, model architecture,
 """
 
 import os
-import sys
 import tempfile
 
 import numpy as np
 from tensorflow import keras
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 import mnist_ann_classifier as clf
 
 
