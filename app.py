@@ -207,7 +207,7 @@ EXAMPLES_NOTE = """
 - White digit on dark background works best
 """
 
-with gr.Blocks(css=CSS, title="MNIST ANN Classifier") as demo:
+with gr.Blocks(title="MNIST ANN Classifier") as demo:
     gr.Markdown(f"# {TITLE}")
     gr.Markdown(DESCRIPTION)
 
@@ -251,4 +251,4 @@ with gr.Blocks(css=CSS, title="MNIST ANN Classifier") as demo:
     """)
 
 if __name__ == "__main__":
-    demo.launch(share=False, server_name="0.0.0.0", server_port=7860)
+    demo.launch(share=False, server_name="0.0.0.0", server_port=7860, css=CSS)
