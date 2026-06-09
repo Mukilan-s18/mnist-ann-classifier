@@ -19,6 +19,25 @@ import tensorflow as tf
 from PIL import Image
 from tensorflow import keras
 
+# ── Generate Dark Grid Background ─────────────────────────────
+def create_grid_background(filename="grid_bg.png"):
+    width, height = 300, 300
+    step = 30
+    bg = np.zeros((height, width, 4), dtype=np.uint8)
+    bg[:, :, 3] = 255  # Solid alpha
+    bg[:, :, 0:3] = [15, 23, 42]  # #0f172a (dark blue base)
+
+    # Grid lines #1e293b
+    grid_color = [30, 41, 59, 255]
+    for x in range(0, width, step):
+        bg[:, x:x+2] = grid_color
+    for y in range(0, height, step):
+        bg[y:y+2, :] = grid_color
+
+    Image.fromarray(bg).save(filename)
+
+create_grid_background()
+
 # ── Load model ────────────────────────────────────────────────
 MODEL_PATH = "saved_model/mnist_ann.keras"
 model = keras.models.load_model(MODEL_PATH)
@@ -35,15 +54,19 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     784-element float vector ready for the model, perfectly
     matching the official MNIST dataset centering algorithm.
     """
-    # 1. Convert to grayscale
-    img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
-    arr = np.array(img, dtype="float32")
+    # 1. Extract stroke data
+    if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+        # If RGBA, the alpha channel perfectly isolates the strokes (Alpha=255) from the transparent background (Alpha=0)
+        arr = image_array[:, :, 3].astype("float32")
+    else:
+        # Fallback for RGB/L
+        img = Image.fromarray(image_array.astype(np.uint8)).convert("L")
+        arr = np.array(img, dtype="float32")
+        # Auto-invert if the background is white
+        if arr[0, 0] > 127:
+            arr = 255.0 - arr
 
-    # 2. Auto-invert if the background is white (check top-left corner)
-    if arr[0, 0] > 127:
-        arr = 255.0 - arr
-
-    # 3. Normalize intensity to [0, 1] (fixes dim strokes like red brush)
+    # 3. Normalize intensity to [0, 1] (fixes dim strokes)
     if arr.max() > 0:
         arr = arr / arr.max()
 
@@ -174,7 +197,12 @@ def predict(image):
 
     # Handle both dict (sketchpad) and ndarray inputs
     if isinstance(image, dict):
-        arr = image.get("composite", image.get("layers", [None])[0])
+        layers = image.get("layers", [])
+        if layers and len(layers) > 0 and layers[0] is not None:
+            # The layer contains ONLY the user's transparent drawing, ignoring the background grid!
+            arr = layers[0]
+        else:
+            arr = image.get("composite", image.get("background", None))
     else:
         arr = image
 
@@ -276,6 +304,7 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS) as demo:
     with gr.Row():
         with gr.Column(scale=1):
             canvas = gr.Sketchpad(
+                value="grid_bg.png",
                 label="✏️ Draw Here",
                 type="numpy",
                 image_mode="RGBA",
