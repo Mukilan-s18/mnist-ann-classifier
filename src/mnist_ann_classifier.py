@@ -18,16 +18,12 @@ import json
 import os
 
 import matplotlib
-import mlflow
+
 import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    classification_report,
-    confusion_matrix,
-)
+
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -115,8 +111,10 @@ def compile_model(model):
 
 
 def train_model(model, x_train, y_train, epochs=EPOCHS,
-                batch_size=BATCH_SIZE, validation_split=0.1, verbose=1):
-    """Trains the model and returns the history object."""
+                batch_size=BATCH_SIZE, validation_split=0.1, verbose=2):
+    """
+    Trains the neural network.
+    """
     early_stop = keras.callbacks.EarlyStopping(
         monitor="val_loss", patience=3, restore_best_weights=True
     )
@@ -212,6 +210,7 @@ def plot_training_history(history, title="ANN Training History",
 
 def plot_confusion_matrix(model, x_test, y_test_raw,
                           save_path="figures/confusion_matrix.png"):
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
     """
     Generates and saves a confusion matrix heatmap.
 
@@ -235,6 +234,7 @@ def plot_confusion_matrix(model, x_test, y_test_raw,
 
 
 def print_classification_report(model, x_test, y_test_raw):
+    from sklearn.metrics import classification_report
     """Prints a per-class precision, recall, and F1-score report."""
     y_pred = np.argmax(model.predict(x_test, verbose=0), axis=1)
     report = classification_report(
@@ -460,9 +460,8 @@ def hyperparameter_analysis(x_train, y_train_ohe, x_test, y_test_ohe,
 # 9. Main Pipeline
 # ──────────────────────────────────────────────────────────────
 def main():
-    # ── MLflow Tracking Setup ─────────────────────────────────
-    mlflow.set_experiment("MNIST-ANN-Classifier")
-    mlflow.tensorflow.autolog()
+    # We disable autolog() and defer MLflow completely to the end
+    # of the script to prevent the Keras 3 macOS SQLite deadlock.
 
     print("=" * 60)
     print("  MNIST ANN Classifier — Full Evaluation Pipeline (MLflow Enabled)")
@@ -477,6 +476,7 @@ def main():
 
     # ── Train or Load ─────────────────────────────────────────
     model = load_saved_model()
+    train_loss, train_accuracy = None, None
     if model is None:
         print("\n🚀 No saved model found — training from scratch …\n")
         model = build_model(units=(128, 64), dropout_rate=0.2)
@@ -486,16 +486,15 @@ def main():
                               epochs=EPOCHS, batch_size=BATCH_SIZE)
         save_model(model)
         plot_training_history(history)
+        
+        # Save metrics for later MLflow logging
+        train_loss = history.history["loss"][-1]
+        train_accuracy = history.history["accuracy"][-1]
     else:
         print("⚡ Skipping training — using saved model.")
 
     # ── Core Evaluation ───────────────────────────────────────
     test_loss, test_acc = model.evaluate(x_test_flat, y_test_ohe, verbose=0)
-
-    # Log final test metrics to MLflow if inside an active run
-    if mlflow.active_run():
-        mlflow.log_metric("test_loss", test_loss)
-        mlflow.log_metric("test_accuracy", test_acc)
 
     print(f"\n{'='*60}")
     print(f"  Test Loss     : {test_loss:.4f}")
@@ -527,8 +526,30 @@ def main():
     hyperparameter_analysis(x_train_flat, y_train_ohe, x_test_flat, y_test_ohe)
 
     print("\n" + "=" * 60)
-    print("  ✅ All steps completed. Check generated PNG files.")
+    print("  ✅ All steps completed. Check generated PNG files. Logging to MLflow...")
     print("=" * 60 + "\n")
+
+    # ── Deferred MLflow Logging ───────────────────────────────
+    # We log everything at the very end to prevent macOS SQLite thread deadlocks
+    import mlflow
+    mlflow.set_experiment("MNIST-ANN-Classifier")
+    with mlflow.start_run():
+        mlflow.log_params({
+            "epochs": EPOCHS,
+            "batch_size": BATCH_SIZE,
+            "units": (128, 64),
+            "dropout_rate": 0.2,
+            "random_seed": RANDOM_SEED
+        })
+        if train_loss is not None:
+            mlflow.log_metric("train_loss", train_loss)
+            mlflow.log_metric("train_accuracy", train_accuracy)
+            
+        mlflow.log_metric("test_loss", test_loss)
+        mlflow.log_metric("test_accuracy", test_acc)
+        
+        if os.path.exists("figures"):
+            mlflow.log_artifacts("figures", artifact_path="evaluation_figures")
 
 
 if __name__ == "__main__":
