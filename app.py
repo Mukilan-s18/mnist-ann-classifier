@@ -24,7 +24,7 @@ model = keras.models.load_model(MODEL_PATH)
 print(f"✅ Model loaded from {MODEL_PATH}")
 
 DIGIT_LABELS = [str(i) for i in range(10)]
-EMOJI = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
+EMOJI = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
 
 
 # ── Preprocessing ─────────────────────────────────────────────
@@ -61,7 +61,7 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
 
-    cropped = arr[rmin:rmax+1, cmin:cmax+1]
+    cropped = arr[rmin : rmax + 1, cmin : cmax + 1]
 
     # 5. Resize so the maximum dimension is 20 pixels (MNIST standard)
     h, w = cropped.shape
@@ -91,7 +91,7 @@ def preprocess(image_array: np.ndarray) -> np.ndarray:
     start_y = max(0, min(28 - new_h, start_y))
     start_x = max(0, min(28 - new_w, start_x))
 
-    canvas[start_y:start_y+new_h, start_x:start_x+new_w] = cropped_arr
+    canvas[start_y : start_y + new_h, start_x : start_x + new_w] = cropped_arr
 
     return canvas.reshape(1, 784)
 
@@ -111,7 +111,7 @@ def compute_saliency(input_vector: np.ndarray, class_idx: int) -> np.ndarray:
         preds = model(x, training=False)
         score = preds[:, class_idx]
 
-    grads = tape.gradient(score, x)          # shape (1, 784)
+    grads = tape.gradient(score, x)  # shape (1, 784)
 
     if grads is None:
         # Fallback: return uniform heatmap if gradients unavailable
@@ -126,11 +126,11 @@ def compute_saliency(input_vector: np.ndarray, class_idx: int) -> np.ndarray:
     return saliency
 
 
-def make_saliency_figure(original_28: np.ndarray,
-                         saliency: np.ndarray,
-                         pred_digit: int,
-                         confidence: float):
+def make_saliency_figure(
+    original_28: np.ndarray, saliency: np.ndarray, pred_digit: int, confidence: float
+):
     import matplotlib.pyplot as plt
+
     """
     Creates a side-by-side figure: original digit | saliency overlay.
     """
@@ -151,15 +151,14 @@ def make_saliency_figure(original_28: np.ndarray,
     # Right: saliency overlay
     axes[1].imshow(original_28, cmap="gray", vmin=0, vmax=1, alpha=0.4)
     axes[1].imshow(saliency, cmap="hot", alpha=0.7, vmin=0, vmax=1)
-    axes[1].set_title(
-        f"Saliency — why {EMOJI[pred_digit]} ?",
-        color="white", fontsize=11
-    )
+    axes[1].set_title(f"Saliency — why {EMOJI[pred_digit]} ?", color="white", fontsize=11)
     axes[1].axis("off")
 
     fig.suptitle(
-        f"Predicted: {EMOJI[pred_digit]}  ({confidence*100:.1f}% confidence)",
-        color="#38bdf8", fontsize=13, fontweight="bold"
+        f"Predicted: {EMOJI[pred_digit]}  ({confidence * 100:.1f}% confidence)",
+        color="#38bdf8",
+        fontsize=13,
+        fontweight="bold",
     )
     fig.tight_layout(pad=0.5)
     return fig
@@ -195,21 +194,19 @@ def predict(image):
     original_28 = x.reshape(28, 28)
 
     # Inference (Bypass model.predict to prevent Apple Silicon tf.data background thread deadlocks)
-    probs     = model(x, training=False).numpy()[0]     # shape (10,)
-    pred_idx  = int(np.argmax(probs))
+    probs = model(x, training=False).numpy()[0]  # shape (10,)
+    pred_idx = int(np.argmax(probs))
     confidence = float(probs[pred_idx])
 
     # Saliency
     saliency = compute_saliency(x, pred_idx)
-    fig      = make_saliency_figure(original_28, saliency, pred_idx, confidence)
+    fig = make_saliency_figure(original_28, saliency, pred_idx, confidence)
 
     # Label string
-    label = f"{EMOJI[pred_idx]}  Digit {pred_idx}  — {confidence*100:.1f}% confident"
+    label = f"{EMOJI[pred_idx]}  Digit {pred_idx}  — {confidence * 100:.1f}% confident"
 
     # Probabilities dict for Gradio bar chart
-    prob_dict = {
-        f"{EMOJI[i]} Digit {i}": float(probs[i]) for i in range(10)
-    }
+    prob_dict = {f"{EMOJI[i]} Digit {i}": float(probs[i]) for i in range(10)}
 
     return label, prob_dict, fig
 
@@ -304,12 +301,16 @@ with gr.Blocks(title="MNIST ANN Classifier", css=CSS, js=JS_DARK_MODE) as demo:
                 height=300,
                 width=300,
                 elem_classes=["sketch-bg"],
-                brush=gr.Brush(default_size=20, colors=["#ff0000", "#ffffff", "#000000"], default_color="#ff0000"),
+                brush=gr.Brush(
+                    default_size=20,
+                    colors=["#ff0000", "#ffffff", "#000000"],
+                    default_color="#ff0000",
+                ),
             )
             gr.Markdown(EXAMPLES_NOTE)
             with gr.Row():
                 submit_btn = gr.Button("🔍 Predict", variant="primary")
-                clear_btn  = gr.ClearButton(value="🗑️ Clear")
+                clear_btn = gr.ClearButton(value="🗑️ Clear")
 
         with gr.Column(scale=1):
             prediction_label = gr.Label(

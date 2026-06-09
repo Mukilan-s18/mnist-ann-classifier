@@ -20,21 +20,19 @@ def test_load_data():
     """Dataset should return numpy arrays with expected shapes."""
     (x_train, y_train), (x_test, y_test) = clf.load_data()
     assert x_train.shape == (60000, 28, 28)
-    assert x_test.shape  == (10000, 28, 28)
+    assert x_test.shape == (10000, 28, 28)
     assert len(y_train) == 60000
-    assert len(y_test)  == 10000
+    assert len(y_test) == 10000
 
 
 def test_preprocess_data():
     """Preprocessing should flatten, normalize, and one-hot encode."""
     mock_x_train = np.random.randint(0, 256, (20, 28, 28), dtype=np.uint8)
-    mock_x_test  = np.random.randint(0, 256, (10, 28, 28), dtype=np.uint8)
+    mock_x_test = np.random.randint(0, 256, (10, 28, 28), dtype=np.uint8)
     mock_y_train = np.random.randint(0, 10, 20, dtype=np.uint8)
-    mock_y_test  = np.random.randint(0, 10, 10, dtype=np.uint8)
+    mock_y_test = np.random.randint(0, 10, 10, dtype=np.uint8)
 
-    xtr, xte, ytr, yte = clf.preprocess_data(
-        mock_x_train, mock_x_test, mock_y_train, mock_y_test
-    )
+    xtr, xte, ytr, yte = clf.preprocess_data(mock_x_train, mock_x_test, mock_y_train, mock_y_test)
 
     # Shape checks
     assert xtr.shape == (20, 784)
@@ -104,7 +102,7 @@ def test_save_and_load_model():
         assert loaded is not None
 
         dummy = np.random.rand(3, 784).astype("float32")
-        preds_orig   = model.predict(dummy, verbose=0)
+        preds_orig = model.predict(dummy, verbose=0)
         preds_loaded = loaded.predict(dummy, verbose=0)
         assert np.allclose(preds_orig, preds_loaded, atol=1e-5)
 
@@ -121,6 +119,7 @@ def test_load_nonexistent_model():
 def test_confusion_matrix_shape():
     """Confusion matrix output should be (10, 10) for MNIST."""
     from sklearn.metrics import confusion_matrix
+
     y_true = np.random.randint(0, 10, 100)
     y_pred = np.random.randint(0, 10, 100)
     cm = confusion_matrix(y_true, y_pred)
